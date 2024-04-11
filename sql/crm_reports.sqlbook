@@ -1,0 +1,64 @@
+-- SQLBook: Markup
+# Reportes CRM
+-- SQLBook: Markup
+Contactos y negocios nuevos en un rango de tiempo
+-- SQLBook: Code
+/* Negocios */
+SELECT
+  crm_deals.deal_name AS Nombre,
+  IF(common_person.id IS NULL, '', CONCAT_WS(' ',
+    IFNULL(
+      common_person.person_name,
+      CONCAT_WS(' ', common_person.person_first_name, common_person.person_second_name, common_person.person_first_name, common_person.person_first_name)
+    ),
+    common_person.identification_type_name,
+    CONCAT_WS('-',
+      common_person.person_identification,
+      common_person.person_identification_check
+    )
+  )) AS Contacto,
+  erp_item.item_name AS Plan,
+  crm_deals.amount AS `Valor negocio`,
+  crm_origins.origin_name AS Origen,
+  CONCAT(crm_pipelines.pipeline_name, ': ', crm_pipeline_stages.pipeline_stage_name) AS `Etapa`,
+  crm_deals.created_at AS Creado
+FROM crm_deals
+INNER JOIN crm_origins ON crm_origins.id = crm_deals.origin_id
+INNER JOIN crm_pipelines ON crm_pipelines.id = crm_deals.pipeline_id
+INNER JOIN crm_pipeline_stages ON crm_pipeline_stages.id = crm_deals.pipeline_stage_id
+LEFT OUTER JOIN common_person ON common_person.id = crm_deals.person_id
+LEFT OUTER JOIN erp_item ON erp_item.id = crm_deals.item_id
+WHERE
+  crm_deals.company_key = 1040 AND
+  crm_pipeline_stages.is_won AND
+  crm_deals.created_at BETWEEN CONVERT('2023-01-01 00:00:00', DATETIME) AND CONVERT('2023-01-31 23:59:59', DATETIME)
+;
+
+/* Contactos */
+SELECT
+  crm_deals.deal_name AS Nombre,
+  IF(common_person.id IS NULL, '', CONCAT_WS(' ',
+    IFNULL(
+      common_person.person_name,
+      CONCAT_WS(' ', common_person.person_first_name, common_person.person_second_name, common_person.person_first_name, common_person.person_first_name)
+    ),
+    common_person.identification_type_name,
+    CONCAT_WS('-',
+      common_person.person_identification,
+      common_person.person_identification_check
+    )
+  )) AS Contacto,
+  erp_item.item_name AS Plan,
+  crm_deals.amount AS `Valor negocio`,
+  crm_origins.origin_name AS Origen,
+  CONCAT(crm_pipelines.pipeline_name, ': ', crm_pipeline_stages.pipeline_stage_name) AS `Etapa`,
+  crm_deals.created_at AS Creado
+FROM common_person
+INNER JOIN crm_origins ON crm_origins.id = common_person.
+INNER JOIN crm_pipelines ON crm_pipelines.id = crm_deals.pipeline_id
+INNER JOIN crm_pipeline_stages ON crm_pipeline_stages.id = crm_deals.pipeline_stage_id
+LEFT OUTER JOIN erp_item ON erp_item.id = crm_deals.item_id
+WHERE
+  common_person.company_key = 1040 AND
+  common_person.person_created_at BETWEEN CONVERT('2023-01-01 00:00:00', DATETIME) AND CONVERT('2023-01-31 23:59:59', DATETIME)
+;

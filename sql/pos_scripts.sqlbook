@@ -1,0 +1,106 @@
+-- SQLBook: Markup
+# Scripts para el POS
+-- SQLBook: Markup
+## Cierres de caja
+---
+-- SQLBook: Markup
+- Actualizar el consecutivo de un cierre de caja en la descripción del asiento contable
+-- SQLBook: Code
+SET @_company_key = 1394;
+SET @_register_id = '28b803f2-f0da-47bc-b864-bb1de2c6cd29' COLLATE utf8mb4_0900_ai_ci;
+
+/* Ventas */
+UPDATE erp_pos_register_closures
+INNER JOIN erp_branch ON erp_branch.id = erp_pos_register_closures.branch_id
+INNER JOIN erp_pos_registers ON erp_pos_registers.id = erp_pos_register_closures.register_id
+INNER JOIN erp_document ON erp_document.id = erp_pos_register_closures.document_id
+INNER JOIN erp_document_detail ON erp_document_detail.document_id = erp_document.id
+SET
+  erp_document.document_description = CONCAT(
+    'Cierre de caja #', erp_pos_register_closures.register_closure_consecutive, ' ',
+    erp_branch.branch_name, ' > ', erp_pos_registers.register_name, ' - Ventas'
+  ),
+  erp_document_detail.document_description = erp_document.document_description,
+  erp_document_detail.document_detail_description = NULL
+WHERE
+  erp_pos_register_closures.company_key = @_company_key AND
+  erp_pos_register_closures.register_id = @_register_id
+;
+
+/* Anticipos */
+UPDATE erp_pos_register_closures
+INNER JOIN erp_branch ON erp_branch.id = erp_pos_register_closures.branch_id
+INNER JOIN erp_pos_registers ON erp_pos_registers.id = erp_pos_register_closures.register_id
+INNER JOIN erp_document ON erp_document.id = erp_pos_register_closures.document_id_advance
+INNER JOIN erp_document_detail ON erp_document_detail.document_id = erp_document.id
+SET
+  erp_document.document_description = CONCAT(
+    'Cierre de caja #', erp_pos_register_closures.register_closure_consecutive, ' ',
+    erp_branch.branch_name, ' > ', erp_pos_registers.register_name, ' - Anticipos'
+  ),
+  erp_document_detail.document_description = erp_document.document_description,
+  erp_document_detail.document_detail_description = NULL
+WHERE
+  erp_pos_register_closures.company_key = @_company_key AND
+  erp_pos_register_closures.register_id = @_register_id
+;
+
+/* Devoluciones */
+UPDATE erp_pos_register_closures
+INNER JOIN erp_branch ON erp_branch.id = erp_pos_register_closures.branch_id
+INNER JOIN erp_pos_registers ON erp_pos_registers.id = erp_pos_register_closures.register_id
+INNER JOIN erp_document ON erp_document.id = erp_pos_register_closures.document_id_refund
+INNER JOIN erp_document_detail ON erp_document_detail.document_id = erp_document.id
+SET
+  erp_document.document_description = CONCAT(
+    'Cierre de caja #', erp_pos_register_closures.register_closure_consecutive, ' ',
+    erp_branch.branch_name, ' > ', erp_pos_registers.register_name, ' - Devoluciones'
+  ),
+  erp_document_detail.document_description = erp_document.document_description,
+  erp_document_detail.document_detail_description = NULL
+WHERE
+  erp_pos_register_closures.company_key = @_company_key AND
+  erp_pos_register_closures.register_id = @_register_id
+;
+-- SQLBook: Markup
+- Abrir los regístros de una empresa en una caja en un rango de fechas
+-- SQLBook: Code
+SET @_company_key = 22673;
+SET @_date_from = '2024-03-13' COLLATE utf8mb4_0900_ai_ci;
+SET @_register_id = 'ffce1469-7f64-11ec-a702-42010a32b05e' COLLATE utf8mb4_0900_ai_ci;
+
+UPDATE erp_pos_invoice SET
+  erp_pos_invoice.invoice_status = 'PD'
+WHERE
+  erp_pos_invoice.company_key = @_company_key AND
+  erp_pos_invoice.invoice_status = 'CL' AND
+  erp_pos_invoice.invoice_date >= @_date_from AND
+  erp_pos_invoice.register_id = @_register_id
+;
+
+UPDATE erp_pos_credit_notes SET
+  erp_pos_credit_notes.credit_note_is_closed = FALSE
+WHERE
+  erp_pos_credit_notes.company_key = @_company_key AND
+  erp_pos_credit_notes.credit_note_is_closed AND
+  erp_pos_credit_notes.credit_note_date >= @_date_from AND
+  erp_pos_credit_notes.register_id = @_register_id
+;
+
+UPDATE erp_pos_advances SET
+  erp_pos_advances.advance_is_closed = FALSE
+WHERE
+  erp_pos_advances.company_key = @_company_key AND
+  erp_pos_advances.advance_is_closed AND
+  erp_pos_advances.advance_date >= @_date_from AND
+  erp_pos_advances.register_id = @_register_id
+;
+
+UPDATE erp_pos_expenses SET
+  erp_pos_expenses.expense_is_readonly = FALSE
+WHERE
+  erp_pos_expenses.company_key = @_company_key AND
+  erp_pos_expenses.expense_is_readonly AND
+  erp_pos_expenses.expense_date_time >= @_date_from AND
+  erp_pos_expenses.register_id = @_register_id
+;

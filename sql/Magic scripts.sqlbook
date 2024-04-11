@@ -1,0 +1,75 @@
+-- SQLBook: Markup
+# Scripts mágicos Kalonsos
+-- SQLBook: Markup
+## Cross database (Same server)
+---
+-- SQLBook: Markup
+Genetar un alter table por cada campo
+-- SQLBook: Code
+SELECT
+  CONCAT_WS(' ','ALTER TABLE', TABLE_NAME, 'CHANGE COLUMN', COLUMN_NAME, COLUMN_NAME, "VARCHAR(160)", IF(IS_NULLABLE = 'YES', 'NULL', 'NOT NULL'), IF(COLUMN_DEFAULT IS NULL, IF(IS_NULLABLE = 'YES', 'DEFAULT NULL', NULL), CONCAT('DEFAULT ', COLUMN_DEFAULT)), "COLLATE 'utf8mb4_0900_ai_ci';")
+FROM (
+  SELECT
+    *
+  FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE
+    (
+      COLUMN_NAME LIKE '%created_tag%' OR
+      COLUMN_NAME LIKE '%updated_tag%' OR
+      COLUMN_NAME LIKE '%created_by_tag%' OR
+      COLUMN_NAME LIKE '%updated_by_tag%' OR
+      COLUMN_NAME LIKE '%created_by%' OR
+      COLUMN_NAME LIKE '%updated_by%'
+    ) AND
+    CHARACTER_MAXIMUM_LENGTH = 32 AND
+    TABLE_SCHEMA = DATABASE()
+) AS cols
+;
+-- SQLBook: Markup
+Buscar procedimientos almacenados que contengan una expresión en el código
+-- SQLBook: Code
+SELECT
+  procedures.*
+FROM INFORMATION_SCHEMA.ROUTINES AS procedures
+WHERE
+  ROUTINE_SCHEMA = DATABASE() AND (
+    ROUTINE_DEFINITION LIKE '%last_activity%'
+  )
+;
+-- SQLBook: Markup
+Generar un query por cada base de datos en el servidor
+-- SQLBook: Code
+SELECT
+  CONCAT('SELECT * FROM ', TABLE_SCHEMA, ".common_person WHERE common_person.id = '9ff6c86a-7a6b-4a14-b9ad-147a432fb4b8' UNION ALL")
+FROM (
+  SELECT DISTINCT TABLE_SCHEMA
+  FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA LIKE 'erp%'
+  GROUP BY TABLE_SCHEMA
+) _databases
+;
+-- SQLBook: Markup
+Buscar campos en una tabla que existen en una base de datos y que en la otra no exísten
+-- SQLBook: Code
+SELECT
+  cols_1024.*,
+  cols_1025.*
+FROM INFORMATION_SCHEMA.TABLES AS `tables`
+INNER JOIN INFORMATION_SCHEMA.`COLUMNS` cols_1025 ON
+  cols_1025.TABLE_NAME = `tables`.TABLE_NAME AND
+  cols_1025.TABLE_SCHEMA = 'erp_1025' /* En esta está el campo */
+LEFT OUTER JOIN INFORMATION_SCHEMA.`COLUMNS` cols_1024 ON
+  cols_1024.TABLE_NAME = `tables`.TABLE_NAME AND
+  cols_1024.COLUMN_NAME = cols_1025.COLUMN_NAME AND
+  cols_1024.TABLE_SCHEMA = 'erp_1024' /* En esta NO está el campo */
+WHERE
+  `tables`.TABLE_NAME = 'common_person' AND
+  TABLE_TYPE = 'BASE TABLE' AND
+  cols_1024.COLUMN_NAME IS NULL
+GROUP BY
+  cols_1025.COLUMN_NAME
+;
+-- SQLBook: Markup
+## New topic
+---
+-- SQLBook: Markup
