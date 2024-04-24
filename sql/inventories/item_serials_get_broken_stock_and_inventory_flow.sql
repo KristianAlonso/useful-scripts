@@ -50,7 +50,8 @@ _erp_item_serials_get_broken_stock_and_inventory_flow: BEGIN
         erp_item.id,
         erp_inventory_detail.item_serial_number
       HAVING
-        inventory_incomes < inventory_outcomes
+        inventory_incomes < inventory_outcomes OR
+        (expected_stock != 0 AND inventory_outcomes >= 1 AND inventory_incomes - 1 > inventory_outcomes)
       ORDER BY
         expected_stock,
         erp_item.item_code,
