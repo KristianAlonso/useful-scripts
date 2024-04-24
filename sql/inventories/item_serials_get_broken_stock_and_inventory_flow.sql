@@ -17,6 +17,7 @@ _erp_item_serials_get_broken_stock_and_inventory_flow: BEGIN
     `inventory_incomes` VARCHAR(120) NOT NULL,
     `inventory_outcomes` VARCHAR(120) NOT NULL,
     `expected_stock` VARCHAR(120) NOT NULL,
+    `inventory_consecutive` VARCHAR(240) NULL DEFAULT NULL,
     `inventory_description` VARCHAR(240) NULL DEFAULT NULL,
     INDEX idx_idx (`idx`)
   );
@@ -50,6 +51,10 @@ _erp_item_serials_get_broken_stock_and_inventory_flow: BEGIN
         erp_inventory_detail.item_serial_number
       HAVING
         inventory_incomes < inventory_outcomes
+      ORDER BY
+        expected_stock,
+        erp_item.item_code,
+        erp_inventory_detail.item_serial_number
     ;
 
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET _item_serials_with_broken_stock_cursor_has_rows = FALSE;
@@ -106,6 +111,7 @@ _erp_item_serials_get_broken_stock_and_inventory_flow: BEGIN
           inventory_incomes,
           inventory_outcomes,
           expected_stock,
+          inventory_consecutive,
           inventory_description
         )
         SELECT
@@ -116,6 +122,7 @@ _erp_item_serials_get_broken_stock_and_inventory_flow: BEGIN
             erp_inventory.inventory_created_at,
             IFNULL(erp_inventory.inventory_created_tag, ''),
             '',
+            CONCAT('Movimiento de inventario # ', erp_inventory.inventory_consecutive),
             erp_inventory.inventory_description
         FROM erp_inventory_detail
         INNER JOIN erp_inventory ON
@@ -144,6 +151,7 @@ _erp_item_serials_get_broken_stock_and_inventory_flow: BEGIN
     _inventory_flow.inventory_incomes AS `Entradas`,
     _inventory_flow.inventory_outcomes AS `Salidas`,
     _inventory_flow.expected_stock AS `Stock`,
+    _inventory_flow.inventory_consecutive AS `Movimiento de inventario`,
     _inventory_flow.inventory_description AS `Descripción`
   FROM _inventory_flow
   ;
